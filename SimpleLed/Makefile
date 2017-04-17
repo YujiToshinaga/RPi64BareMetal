@@ -1,9 +1,9 @@
 # vim: set noexpandtab tabstop=4 shiftwidth=4:
 
-#-------------------------------------------------------------------------------
+#---------------------------------------
 # Variable
-#-------------------------------------------------------------------------------
-######## Target ########
+#---------------------------------------
+# Target
 TARGET			= baremetal
 
 TARGET_AXF		= $(TARGET).axf
@@ -13,7 +13,7 @@ TARGET_DUMP		= $(TARGET).dump
 TARGET_BIN		= $(TARGET).bin
 TARGET_SREC		= $(TARGET).srec
 
-######## Source ########
+# Source
 LDSCRIPT		= baremetal.ld
 
 ASMS			=
@@ -26,11 +26,11 @@ SRCS			+= main.c
 OBJS			= $(ASMS:.S=.o) $(SRCS:.c=.o)
 DPNS			= $(ASMS:.S=.d) $(SRCS:.c=.d)
 
-######## Directory ########
+# Directory
 INCLUDE_DIRS	= .
 SRC_DIRS		= .
 
-######## Command ########
+# Command
 PREFIX			= aarch64-elf-
 
 GCC				= $(PREFIX)gcc
@@ -57,9 +57,9 @@ LDFLAGS			+= -Wl,--build-id=none
 
 RM				= rm -f
 
-#-------------------------------------------------------------------------------
+#---------------------------------------
 # Special Variable
-#-------------------------------------------------------------------------------
+#---------------------------------------
 vpath %.h	= $(INCLUDE_DIRS)
 vpath %.S	= $(SRC_DIRS)
 vpath %.c	= $(SRC_DIRS)
@@ -67,9 +67,9 @@ vpath %.c	= $(SRC_DIRS)
 .PHONY: all map sym dump bin srec clean
 .SUFFIXES: .h .S .c .d .o
 
-#-------------------------------------------------------------------------------
+#---------------------------------------
 # Command
-#-------------------------------------------------------------------------------
+#---------------------------------------
 all: axf map sym dump bin
 
 axf: $(TARGET_AXF)
@@ -94,49 +94,49 @@ clean:
 	$(RM) $(OBJS)
 	$(RM) $(DPNS)
 
-#-------------------------------------------------------------------------------
+#---------------------------------------
 # Dependence
-#-------------------------------------------------------------------------------
-######## Asm file -> Depend file ########
+#---------------------------------------
+# Asm file -> Depend file
 .S.d:
 	$(GCC) -MM -MD $<
 
-######## Asm file -> Object file ########
+# Asm file -> Object file
 .S.o:
 	$(GCC) -c $(ASFLAGS) $(CFLAGS) $<
 
-######## C file -> Depend file ########
+# C file -> Depend file
 .c.d:
 	$(GCC) -MM -MD $<
 
-######## C file -> Object file ########
+# C file -> Object file
 .c.o:
 	$(GCC) -c $(CFLAGS) $<
 
-######## C file -> Asm file ########
+# C file -> Asm file
 .c.S:
 	$(GCC) -S $(CFLAGS) $<
 
-######## Create AXF and map file ########
+# Create AXF and map file
 $(TARGET_AXF) $(TARGET_MAP): $(OBJS) $(LDSCRIPT)
 	$(GCC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$(TARGET_MAP) -o $(TARGET_AXF) $(OBJS)
 
-######## Create symbol file ########
+# Create symbol file
 $(TARGET_SYM): $(TARGET_AXF)
 	$(NM) $^ > $@
 
-######## Create dump file ########
+# Create dump file
 $(TARGET_DUMP): $(TARGET_AXF)
 	$(OBJDUMP) -a -h -D -z $^ > $@
 
-######## Create binary ########
+# Create binary
 $(TARGET_BIN): $(TARGET_AXF)
 	$(OBJCOPY) -O binary $^ $@
 
-######## Create S-record ########
+# Create S-record
 $(TARGET_SREC): $(TARGET_AXF)
 	$(OBJCOPY) -O srec $^ $@
 
-######## Include ########
+# Include
 -include $(DPNS)
 

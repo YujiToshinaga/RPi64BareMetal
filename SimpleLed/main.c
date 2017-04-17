@@ -1,4 +1,5 @@
 #include "baremetal.h"
+#include "aarch64.h"
 
 #define GPFSEL1 0x3F200004
 #define GPSET0  0x3F20001C
