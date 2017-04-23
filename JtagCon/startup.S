@@ -111,12 +111,6 @@ jtagcfg_clear_gppudclk0_loop:
     cmp   x1, #0
     b.ne  jtagcfg_clear_gppudclk0_loop
 
-    // Wait
-wait:
-    ldr   w0, wait_flag
-    cmp   w0, #1
-    b.ne  wait
-
     // Set stack pointer
 set_stack:
     ldr   x0, =(_stack + STACK_SIZE)
@@ -128,7 +122,4 @@ set_stack:
 
 panic:
     b     panic
-
-wait_flag:
-    .word   0
 
