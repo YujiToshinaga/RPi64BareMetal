@@ -8,21 +8,25 @@
     // Entry point
     .type _entry, %function
 _entry:
+    nop
 
     // Go to sleep if not core0
 core_barrier:
     mrs   x0, mpidr_el1
     ldr   x1, =MPIDR_AFFINITY_MASK
     and   x0, x0, x1
-    cmp   x0, 0x0
-    b.eq  core0
+    cmp   x0, #0x0
+    b.eq  core3
 sleep:
-//    wfi
+    wfi
     b     sleep
-core0:
+core3:
+    nop
 
     // JTAG configuration
 jtagcfg:
+    nop
+
 jtagcfg_gpfsel2:            // JTAG configuration GPFSEL2
     ldr   x2, =0x3f200008
     ldr   w0, [x2]          // Load
@@ -81,7 +85,7 @@ jtagcfg_gppud_loop:
     nop
     sub   x1, x1, #1
     cmp   x1, #0
-    bne   jtagcfg_gppud_loop
+    b.ne  jtagcfg_gppud_loop
 
 jtagcfg_gppudclk0:          // JTAG configuration GPPUDCLK0
     ldr   x2, =0x3f200098
@@ -93,7 +97,7 @@ jtagcfg_gppudclk0_loop:
     nop
     sub   x1, x1, #1
     cmp   x1, #0
-    bne   jtagcfg_gppudclk0_loop
+    b.ne  jtagcfg_gppudclk0_loop
 
 jtagcfg_clear_gppudclk0:    // JTAG configuration clear GPPUDCLK0
     ldr   x2, =0x3f200098
@@ -105,7 +109,13 @@ jtagcfg_clear_gppudclk0_loop:
     nop
     sub   x1, x1, #1
     cmp   x1, #0
-    bne   jtagcfg_clear_gppudclk0_loop
+    b.ne  jtagcfg_clear_gppudclk0_loop
+
+    // Wait
+wait:
+    ldr   w0, wait_flag
+    cmp   w0, #1
+    b.ne  wait
 
     // Set stack pointer
 set_stack:
@@ -118,4 +128,7 @@ set_stack:
 
 panic:
     b     panic
+
+wait_flag:
+    .word   0
 
