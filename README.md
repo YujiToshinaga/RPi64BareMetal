@@ -1,2 +1,2 @@
-# RPiBareMetal
-Bare metal programs for Raspberry Pi.
+# RPi64BareMetal
+Bare metal programs for Raspberry Pi with AArch64.
