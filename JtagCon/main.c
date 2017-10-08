@@ -8,6 +8,7 @@ int main(void)
 {
   volatile unsigned int tmp;
 
+  // Blink LED (GPIO16)
 	tmp = *((const volatile unsigned int *)GPFSEL1);
   *(volatile unsigned int *)GPFSEL1 = tmp | (0x01 << (3 * 6));
 
