@@ -21,25 +21,25 @@ int mmu_tt_init(int mmap_index, uint64_t va, uint64_t *ptt, int level);
  *  初段の変換テーブル
  */
 static uint64_t tt_pri[PRC_NUM][TT_FIRST_ENTRY_NUM] __attribute__ ((aligned(TT_FIRST_SIZE)));
-#define my_tt_pri (tt_pri[prc_index()])
+#define my_tt_pri (tt_pri[prc_id()])
 
 /*
  *  2段目以降の変換テーブル
  */
 #define TT_NUM_MAX              10
 static uint64_t tt[PRC_NUM][TT_NUM_MAX][TT_ENTRY_NUM] __attribute__ ((aligned(TT_SIZE)));
-#define my_tt (tt[prc_index()])
+#define my_tt (tt[prc_id()])
 static int tt_num[PRC_NUM];
-#define my_tt_num (tt_num[prc_index()])
+#define my_tt_num (tt_num[prc_id()])
 
 /*
  *  メモリマップの設定を保存しておく配列
  */
 #define MMAP_NUM_MAX            10
 static mmap_t mmap[PRC_NUM][MMAP_NUM_MAX];
-#define my_mmap (mmap[prc_index()])
+#define my_mmap (mmap[prc_id()])
 static int mmap_num[PRC_NUM];
-#define my_mmap_num (mmap_num[prc_index()])
+#define my_mmap_num (mmap_num[prc_id()])
 
 //------------------------------------------------------------------------------
 // Global function

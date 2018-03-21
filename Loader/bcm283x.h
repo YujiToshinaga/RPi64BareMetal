@@ -206,7 +206,7 @@
 
 #ifndef MACRO_ONLY
 
-extern uint32_t prc_index(void);
+extern int prc_id(void);
 
 #endif  /* MACRO_ONLY */
 

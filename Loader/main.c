@@ -22,7 +22,7 @@ int main(void)
     int i;
 
     // シリアルを有効化する
-    if (prc_index() == 0) {
+    if (prc_id() == 0) {
         serial_init();
     }
 
@@ -72,7 +72,7 @@ int main(void)
     cache_enable();
 
     // バイナリロードを行う
-    if (prc_index() == 0) {
+    if (prc_id() == 0) {
         // ユーザ操作を待つ
         prints("Are you ready to load binary? (y)\n");
         while (serial_get() != 'y');
@@ -100,7 +100,7 @@ int main(void)
     }
 
     // バリア同期する
-    if (prc_index() == 0) {
+    if (prc_id() == 0) {
         sync = SYNC_MAGIC;
     } else {
         while (sync != SYNC_MAGIC);

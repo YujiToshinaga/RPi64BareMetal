@@ -14,7 +14,7 @@ TARGET_BIN		= $(TARGET).bin
 TARGET_SREC		= $(TARGET).srec
 
 # Source
-LDSCRIPT		= baremetal.ld
+LDS				= baremetal.ld
 
 ASMS			=
 ASMS			+= startup.S
@@ -30,8 +30,9 @@ SRCS			+= gpio.c
 SRCS			+= timer.c
 SRCS			+= xmodem.c
 
-OBJS			= $(ASMS:.S=.o) $(SRCS:.c=.o)
+LDS_GEN			= $(LDS).gen
 DPNS			= $(ASMS:.S=.d) $(SRCS:.c=.d)
+OBJS			= $(ASMS:.S=.o) $(SRCS:.c=.o)
 
 # Directory
 INCLUDE_DIRS	= .
@@ -58,7 +59,7 @@ CFLAGS			+= -O0 -gdwarf-2
 ASFLAGS			=
 
 LDFLAGS			=
-LDFLAGS			+= -T $(LDSCRIPT)
+LDFLAGS			+= -T $(LDS_GEN)
 LDFLAGS			+= -nostdlib
 LDFLAGS			+= -Wl,--build-id=none
 
@@ -99,12 +100,17 @@ clean:
 	$(RM) $(TARGET_DUMP)
 	$(RM) $(TARGET_BIN)
 	$(RM) $(TARGET_SREC)
-	$(RM) $(OBJS)
+	$(RM) $(LDS_GEN)
 	$(RM) $(DPNS)
+	$(RM) $(OBJS)
 
 #---------------------------------------
 # Dependence
 #---------------------------------------
+# Preprocess for ld script
+$(LDS_GEN): $(LDS)
+	$(GCC) -E -x c $(CFLAGS) $^ | grep -v '^#' > $@
+
 # Asm file -> Depend file
 .S.d:
 	$(GCC) -MM -MD $<
@@ -126,7 +132,7 @@ clean:
 	$(GCC) -S $(CFLAGS) $<
 
 # Create AXF and map file
-$(TARGET_AXF) $(TARGET_MAP): $(OBJS) $(LDSCRIPT)
+$(TARGET_AXF) $(TARGET_MAP): $(OBJS) $(LDS_GEN)
 	$(GCC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$(TARGET_MAP) -o $(TARGET_AXF) $(OBJS)
 
 # Create symbol file

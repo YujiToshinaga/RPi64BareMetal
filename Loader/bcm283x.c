@@ -1,15 +1,17 @@
 #include "stddef.h"
+#include "aarch64.h"
 #include "bcm283x.h"
 
 /*
- *  プロセッサINDEX（0オリジン）の取得
+ *  プロセッサID（0オリジン）の取得
  */
-uint32_t prc_index(void)
+int prc_id(void)
 {
-    uint64_t mpidr;
-    uint32_t index;
+    uint64_t tmp;
+    int id;
 
-    asm volatile("mrs %0, mpidr_el1":"=r"(mpidr));
-    index = (uint32_t)mpidr & 0x000000ff;
-    return index;
+    MPIDR_EL1_READ(tmp);
+    id = (int)(tmp & MPIDR_AFF0_MASK);
+
+    return id;
 }

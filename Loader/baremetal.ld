@@ -1,15 +1,18 @@
+#include "baremetal.h"
+#define MACRO_ONLY
+#include "bcm283x.h"
 
 OUTPUT_FORMAT(elf64-littleaarch64)
 OUTPUT_ARCH(aarch64)
 ENTRY(_entry)
 
 MEMORY {
-  RAM (rwx): ORIGIN = 0x00000000, LENGTH = 0x3f000000
+  RAM (rwx): ORIGIN = SDRAM_ADDR, LENGTH = SDRAM_SIZE
 }
 
 SECTIONS
 {
-  . = 0x00000000;
+  . = LOADER_ADDR;
 
   .startup . : {
     __STARTUP_START__ = .;
