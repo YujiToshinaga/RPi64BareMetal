@@ -172,6 +172,21 @@ void mmu_init(void)
     ISB();
 }
 
+/*
+ *  MMUの終了
+ */
+void mmu_term(void)
+{
+    uint64_t bits;
+
+    /* MMUを無効にする*/
+    bits = 0;
+    SCTLR_EL1_READ(bits);
+    bits &= ~SCTLR_M_BIT;
+    SCTLR_EL1_WRITE(bits);
+    ISB();
+}
+
 //------------------------------------------------------------------------------
 // Local function
 //------------------------------------------------------------------------------

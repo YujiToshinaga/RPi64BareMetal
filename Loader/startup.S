@@ -311,26 +311,13 @@ start_el1:
     msr   s3_1_c15_c2_1, x0
     isb
 
-set_stack:
-    mrs   x0, mpidr_el1
-    ldr   x1, =MPIDR_AFF0_MASK
-    and   x0, x0, x1
-    add   x0, x0, #1
-    ldr   x1, =STACK_CORE_SIZE
-    mul   x0, x1, x0
-    ldr   x1, =(_stack)
-    add   x0, x1, x0
-    mov   sp, x0
-    mov   x29, xzr          // フレームポインタを初期化する
-
-core0_skip:
+set_bss:
     mrs   x0, mpidr_el1
     ldr   x1, =MPIDR_AFF0_MASK
     and   x0, x0, x1
     cmp   x0, xzr
-    b.ne  jump_to_main
-
-set_bss:
+    b.ne  set_bss_end
+set_bss_core0:
     ldr   x1, =__BSS_START__
     ldr   x2, =__BSS_END__
     cmp   x1, x2
@@ -341,7 +328,30 @@ set_bss_loop:
     b.lo  set_bss_loop
 set_bss_end:
 
+set_loader_bss:
+    mrs   x0, mpidr_el1
+    ldr   x1, =MPIDR_AFF0_MASK
+    and   x0, x0, x1
+    cmp   x0, xzr
+    b.ne  set_loader_bss_end
+set_loader_bss_core0:
+    ldr   x1, =__LOADER_BSS_START__
+    ldr   x2, =__LOADER_BSS_END__
+    cmp   x1, x2
+    b.hs  set_loader_bss_end
+set_loader_bss_loop:
+    str   xzr, [x1], #8
+    cmp   x1, x2
+    b.lo  set_loader_bss_loop
+set_loader_bss_end:
+
 //set_data:
+//    mrs   x0, mpidr_el1
+//    ldr   x1, =MPIDR_AFF0_MASK
+//    and   x0, x0, x1
+//    cmp   x0, xzr
+//    b.ne  set_data_end
+//set_data_core0:
 //    ldr   x1, =__ROM_DATA_START__
 //    ldr   x3, =__ROM_DATA_END__
 //    cmp   x1, x3
@@ -357,8 +367,53 @@ set_bss_end:
     /*
      *  main関数へジャンプする
      */
+set_main_stack:
+    mrs   x0, mpidr_el1
+    ldr   x1, =MPIDR_AFF0_MASK
+    and   x0, x0, x1
+    add   x0, x0, #1
+    ldr   x1, =STACK_CORE_SIZE
+    mul   x0, x1, x0
+    ldr   x1, =(_stack)
+    add   x0, x1, x0
+    mov   sp, x0
+    mov   x29, xzr          // フレームポインタを初期化する
 jump_to_main:
     bl    main
+
+    /*
+     *  loaderへジャンプする
+     */
+set_loader_stack:
+    mrs   x0, mpidr_el1
+    ldr   x1, =MPIDR_AFF0_MASK
+    and   x0, x0, x1
+    add   x0, x0, #1
+    ldr   x1, =STACK_CORE_SIZE
+    mul   x0, x1, x0
+    ldr   x1, =(_loader_stack)
+    add   x0, x1, x0
+    mov   sp, x0
+    mov   x29, xzr          // フレームポインタを初期化する
+jump_to_loader:
+    bl    loader
+
+    /*
+     *  main_exit関数へジャンプする
+     */
+set_main_exit_stack:
+    mrs   x0, mpidr_el1
+    ldr   x1, =MPIDR_AFF0_MASK
+    and   x0, x0, x1
+    add   x0, x0, #1
+    ldr   x1, =STACK_CORE_SIZE
+    mul   x0, x1, x0
+    ldr   x1, =(_stack)
+    add   x0, x1, x0
+    mov   sp, x0
+    mov   x29, xzr          // フレームポインタを初期化する
+jump_to_main_exit:
+    bl    main_exit
 
     /*
      *  ロードされたセクションにジャンプする

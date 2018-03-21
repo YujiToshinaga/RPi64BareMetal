@@ -19,6 +19,7 @@ LDS				= baremetal.ld
 ASMS			=
 ASMS			+= startup.S
 ASMS			+= stack.S
+ASMS			+= loader_stack.S
 
 SRCS			=
 SRCS			+= main.c
@@ -29,6 +30,7 @@ SRCS			+= serial.c
 SRCS			+= gpio.c
 SRCS			+= timer.c
 SRCS			+= xmodem.c
+SRCS			+= loader.c
 
 LDS_GEN			= $(LDS).gen
 DPNS			= $(ASMS:.S=.d) $(SRCS:.c=.d)

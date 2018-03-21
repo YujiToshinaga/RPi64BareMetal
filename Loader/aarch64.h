@@ -400,6 +400,7 @@ extern void cache_disable(void);
 extern void mmu_mmap_init(void);
 extern void mmu_mmap_add(const mmap_t *pmm);
 extern void mmu_init(void);
+extern void mmu_term(void);
 
 #endif  /* MACRO_ONLY */
 

@@ -11,41 +11,55 @@
 #define SYNC_MAGIC 0x87654321
 
 int sync = 0;
+int exit_sync = 0;
 
 int main(void)
 {
     mmap_t mm;
-    int load_size = 0;
-    uint64_t cur_tim;
-    uint32_t tmp32;
     uint64_t tmp64;
-    int i;
 
     // シリアルを有効化する
     if (prc_id() == 0) {
         serial_init();
     }
 
+    if (prc_id() == 0) {
+        prints("Binary loader with XMODEM protocol\n");
+        printk("    Load point : 0x%08x\n", LOAD_ADDR);
+        printk("    Max size   : %d bytes\n", LOAD_SIZE);
+        prints("\n");
+    }
+
     // キャッシュ、MMUを有効化する
     cache_disable();
 
-    SCTLR_EL1_WRITE(SCTLR_SA_BIT | SCTLR_A_BIT);
+    SCTLR_EL1_READ(tmp64);
+    tmp64 |= (SCTLR_SA_BIT | SCTLR_A_BIT);
+    SCTLR_EL1_WRITE(tmp64);
     ISB();
 
     CPUECTLR_EL1_READ(tmp64);
     tmp64 |= CPUECTLR_SMPEN_BIT;
     CPUECTLR_EL1_WRITE(tmp64);
+    ISB();
 
     mmu_mmap_init();
+
+    mm.pa   = MAIN_ADDR;
+    mm.va   = mm.pa;
+    mm.size = MAIN_SIZE;
+    mm.attr = MEM_ATTR_SO;
+    mm.ns   = MEM_NS_NONSECURE;
+    mmu_mmap_add(&mm);
     mm.pa   = LOADER_ADDR;
     mm.va   = mm.pa;
     mm.size = LOADER_SIZE;
     mm.attr = MEM_ATTR_NML_C;
     mm.ns   = MEM_NS_NONSECURE;
     mmu_mmap_add(&mm);
-    mm.pa   = TMP_LOAD_ADDR;
+    mm.pa   = LOAD_TMP_ADDR;
     mm.va   = mm.pa;
-    mm.size = TMP_LOAD_SIZE;
+    mm.size = LOAD_SIZE;
     mm.attr = MEM_ATTR_NML_C;
     mm.ns   = MEM_NS_NONSECURE;
     mmu_mmap_add(&mm);
@@ -71,39 +85,27 @@ int main(void)
     mmu_init();
     cache_enable();
 
-    // バイナリロードを行う
-    if (prc_id() == 0) {
-        // ユーザ操作を待つ
-        prints("Are you ready to load binary? (y)\n");
-        while (serial_get() != 'y');
-        prints("y\n");
-
-        // 10秒待つ
-        cur_tim = timer_get_syscount(); // [us]
-        while (timer_get_syscount() < (cur_tim + 10 * 1000 * 1000));
-
-        // XMODEM転送を行う
-        xmodem_ready();
-        load_size = xmodem_receiving((uint8_t *)TMP_LOAD_ADDR);
-        printk("Received %d bytes\n", load_size);
-
-        // キャッシュ領域から非キャッシュ領域へコピー
-        for (i = 0; i < load_size; i = i + 4) {
-            tmp32 = rd_word(TMP_LOAD_ADDR + i);
-            wr_word(LOAD_ADDR + i, tmp32);
-        }
-        prints("Loading is completed\n");
-
-        // 1秒待つ
-        cur_tim = timer_get_syscount(); // [us]
-        while (timer_get_syscount() < (cur_tim + 1 * 1000 * 1000));
-    }
-
     // バリア同期する
     if (prc_id() == 0) {
         sync = SYNC_MAGIC;
     } else {
         while (sync != SYNC_MAGIC);
+    }
+
+    return 0;
+}
+
+
+int main_exit(void)
+{
+    cache_disable();
+    mmu_term();
+
+    // バリア同期する
+    if (prc_id() == 0) {
+        exit_sync = SYNC_MAGIC;
+    } else {
+        while (exit_sync != SYNC_MAGIC);
     }
 
     return 0;
