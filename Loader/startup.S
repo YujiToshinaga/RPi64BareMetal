@@ -9,15 +9,19 @@
 //#define DEBUG_STUB
 //#define DEBUG_SECURE
 
-    .global	_entry
-
-    .section .startup, "ax"
-
     /*
      *  エントリポイント
      */
+    .global	_entry
+    .section .startup, "ax"
     .type _entry, %function
 _entry:
+    b     _main_entry
+
+    .global	_main_entry
+    .section .main_startup, "ax"
+    .type _main_entry, %function
+_main_entry:
 
 #ifdef DEBUG_CORE0
     /*

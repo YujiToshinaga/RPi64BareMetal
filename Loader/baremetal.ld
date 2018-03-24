@@ -12,12 +12,20 @@ MEMORY {
 
 SECTIONS
 {
-    . = MAIN_ADDR;
+    . = START_ADDR;
 
     .startup . : {
         __STARTUP_START__ = .;
         startup.o(.startup)
         __STARTUP_END__ = .;
+    } > RAM
+
+    . = MAIN_ADDR;
+
+    .main_startup . : {
+        __main_STARTUP_START__ = .;
+        startup.o(.main_startup)
+        __main_STARTUP_END__ = .;
     } > RAM
 
     .text . : {
