@@ -98,35 +98,13 @@ uint32_t wm8731_read(uint32_t addr)
     return 0;
 }
 
-void wm8731_init(int sr, int bit)
+void wm8731_init(int master_mode, int sr, int bit)
 {
     uint32_t data;
-
-    switch (sr) {
-    case 48000:
-        break;
-    default:
-        break;
-    }
-
-    switch (bit) {
-    case 24:
-    case 32:
-        break;
-    default:
-        break;
-    }
 
     // Reset register
     //    00000000を書き込むことでリセットされる
     wm8731_write(WM8731_RESET, WM8731_RESET_RESET);
-
-    // Power down control // debug
-    //    各機能のPower downを無効にするには00000000にする
-    data = 0x0;
-    data = data | WM8731_POWER_MICPD_BIT; // debug
-    data = data | WM8731_POWER_CLKOUTPD_BIT; // debug
-    wm8731_write(WM8731_POWER, data);
 
     // Left line in
     // Rigth line in
@@ -147,7 +125,6 @@ void wm8731_init(int sr, int bit)
     data = 0x0;
     data = data | WM8731_HPOUT_HPVOL(0);
     data = data | WM8731_HPOUT_LRHPBOTH_BIT;
-//    data = data | WM8731_HPOUT_ZCEN_BIT; // debug
     wm8731_write(WM8731_LHPOUT, data);
     wm8731_write(WM8731_RHPOUT, data);
 
@@ -160,8 +137,8 @@ void wm8731_init(int sr, int bit)
     //    5     side tone                               : disable
     //    7:6   side tone attenuation                   : -6dB
     data = 0x0;
-    data = data | WM8731_ANACTRL_DACSEL_BIT; // debug
-    data = data | WM8731_ANACTRL_MUTEMIC_BIT; // debug
+    data = data | WM8731_ANACTRL_DACSEL_BIT;
+    data = data | WM8731_ANACTRL_MUTEMIC_BIT;
     wm8731_write(WM8731_ANACTRL, data);
 
     // Digital audio path control
@@ -170,13 +147,13 @@ void wm8731_init(int sr, int bit)
     //    3     DAC soft mute                           : disable
     //    4     dc offset when high pass filter         : clear
     data = 0x0;
+//    data = data | WM8731_DIGCTRL_HPOR_BIT; // debug
     wm8731_write(WM8731_DIGCTRL, data);
 
     // Power down control
     //    各機能のPower downを無効にするには00000000にする
     data = 0x0;
-    data = data | WM8731_POWER_MICPD_BIT; // debug
-    data = data | WM8731_POWER_CLKOUTPD_BIT; // debug
+    data = data | WM8731_POWER_MICPD_BIT;
     wm8731_write(WM8731_POWER, data);
 
     // Digital interface
@@ -184,28 +161,52 @@ void wm8731_init(int sr, int bit)
     //    3:2   Input Audio tmp Bit                     : 32bits
     //    4     
     //    5
-    //    6     Master Slave Mode Control               : Slave Mode
+    //    6     Master Slave Mode Control               : Master Mode / Slave Mode
     //    7
-    switch (sr) {
-    case 32:
-        data = 0x0;
-        data = data | WM8731_DIGIF_FORMAT_I2S;
-        data = data | WM8731_DIGIF_IWL_32;
-//        data = data | WM8731_DIGIF_MS_BIT; // debug
-        wm8731_write(WM8731_DIGIF, data);
-        break;
-    case 24:
-        data = 0x0;
-        data = data | WM8731_DIGIF_FORMAT_I2S;
-        data = data | WM8731_DIGIF_IWL_24;
-        wm8731_write(WM8731_DIGIF, data);
-        break;
-    case 20:
-        break;
-    case 16:
-        break;
-    default:
-        break;
+    if (master_mode == WM8731_MSTR) {
+        switch (bit) {
+        case 32:
+            data = 0x0;
+            data = data | WM8731_DIGIF_FORMAT_I2S;
+            data = data | WM8731_DIGIF_IWL_32;
+            data = data | WM8731_DIGIF_MS_BIT;
+            wm8731_write(WM8731_DIGIF, data);
+            break;
+        case 24:
+            data = 0x0;
+            data = data | WM8731_DIGIF_FORMAT_I2S;
+            data = data | WM8731_DIGIF_IWL_24;
+            data = data | WM8731_DIGIF_MS_BIT;
+            wm8731_write(WM8731_DIGIF, data);
+            break;
+        case 20:
+            break;
+        case 16:
+            break;
+        default:
+            break;
+        }
+    } else {
+        switch (bit) {
+        case 32:
+            data = 0x0;
+            data = data | WM8731_DIGIF_FORMAT_I2S;
+            data = data | WM8731_DIGIF_IWL_32;
+            wm8731_write(WM8731_DIGIF, data);
+            break;
+        case 24:
+            data = 0x0;
+            data = data | WM8731_DIGIF_FORMAT_I2S;
+            data = data | WM8731_DIGIF_IWL_24;
+            wm8731_write(WM8731_DIGIF, data);
+            break;
+        case 20:
+            break;
+        case 16:
+            break;
+        default:
+            break;
+        }
     }
 
     // Sampling control

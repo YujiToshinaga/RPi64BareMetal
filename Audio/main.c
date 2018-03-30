@@ -90,46 +90,44 @@ void memory_init(void)
     cache_enable();
 }
 
+//static uint32_t buf[48000 * 10 * 2];
+
 void audio_play(void)
 {
-    uint32_t buf_l[64], buf_r[64];
-    int rd_i, wr_i;
+    uint32_t l, r;
     int count;
+//    int i;
 
     prints("init 1\n");
     gpio_init();
     i2c_init(I2C_MSTR1, 0x1a);
-    i2s_init(48000, 32);
+    i2s_init(I2S_SLAV, 48000, 32);
 
     prints("init 2\n");
-    wm8731_init(48000, 32);
+    wm8731_init(WM8731_MSTR, 48000, 32);
 
     prints("init 3\n");
     wm8713_active();
 
     count = 0;
-    rd_i = 0;
-    wr_i = 0;
     for ( ; ; ) {
-        i2s_read(buf_l + rd_i, buf_r + rd_i);
+        i2s_read(&l, &r);
         if ((count % 48000) == 0) {
-            printk("%10d %10d : %08x %08x\n",
-                    rd_i, wr_i, (int)*(buf_l + rd_i), (int)*(buf_r + rd_i));
-        }
-        if (rd_i == 63) {
-            rd_i = 0;
-        } else {
-            rd_i++;
+            printk("%08x %08x\n", l, r);
         }
 
-        if (count > 32) {
-            i2s_write(buf_l + wr_i, buf_r + wr_i);
-            if (wr_i == 63) {
-                wr_i = 0;
-            } else {
-                wr_i++;
-            }
-        }
+        i2s_write(&l, &r);
+
+//        if (count < 48000 * 10) {
+//            buf[count * 2 + 0] = l;
+//            buf[count * 2 + 1] = r;
+//        } else {
+//            break;
+//        }
         count++;
     }
+
+//    for (i = 0; i < 48000 * 10 * 2; i++) {
+//        printk("%08x\n", buf[i]);
+//    }
 }

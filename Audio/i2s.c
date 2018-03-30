@@ -119,24 +119,8 @@
 #define PCM_TXC_CH2WID_SFT      0
 #define PCM_TXC_CH2WID_MSK      (0xf << 0)
 
-void i2s_init(int sr, int bit)
+void i2s_init(int master_mode, int sr, int bit)
 {
-    switch (sr) {
-    case 48000:
-        break;
-    default:
-        return;
-        break;
-    }
-    switch (bit) {
-    case 24:
-    case 32:
-        break;
-    default:
-        return;
-        break;
-    }
-
     /*
      *  GPIOをI2Sに切り替え
      */
@@ -145,67 +129,103 @@ void i2s_init(int sr, int bit)
     gpio_fsel(20, GPIO_FSEL_0);
     gpio_fsel(21, GPIO_FSEL_0);
 
-    /*
-     *  Clock Manager Audio Clocks Control
-     */
-    // oscillator 19.2Mhz
-    // PLLC 1000Mhz
-    // PLLC 500Mhz
-    switch (sr) {
-    case 48000:
-        // DIVI=6, DIVF=1024
-        wr_word(CM_PCMCTL, CM_PASSWD |
-                CM_PCMCTL_KILL_BIT | CM_PCMCTL_SRC_OSC);
-        wr_word(CM_PCMDIV, CM_PASSWD |
-                (6 << CM_PCMDIV_DIVI_SFT) | (1024 << CM_PCMDIV_DIVF_SFT));
-        wr_word(CM_PCMCTL, CM_PASSWD |
-                CM_PCMCTL_1MASH | CM_PCMCTL_ENAB_BIT | CM_PCMCTL_SRC_OSC);
-        break;
-    case 96000:
-        // DIVI=3, DIVF=512
-        wr_word(CM_PCMCTL, CM_PASSWD |
-                CM_PCMCTL_KILL_BIT | CM_PCMCTL_SRC_OSC);
-        wr_word(CM_PCMDIV, CM_PASSWD |
-                (3 << CM_PCMDIV_DIVI_SFT) | (512 << CM_PCMDIV_DIVF_SFT));
-        wr_word(CM_PCMCTL, CM_PASSWD |
-                CM_PCMCTL_1MASH | CM_PCMCTL_ENAB_BIT | CM_PCMCTL_SRC_OSC);
-        break;
-    default:
-        break;
-    }
+    if (master_mode == I2S_MSTR) {
+        /*
+        *  Clock Manager Audio Clocks Control
+        */
+        // oscillator 19.2Mhz
+        // PLLC 1000Mhz
+        // PLLC 500Mhz
+        switch (sr) {
+        case 48000:
+            // DIVI=6, DIVF=1024
+            wr_word(CM_PCMCTL, CM_PASSWD |
+                    CM_PCMCTL_KILL_BIT | CM_PCMCTL_SRC_OSC);
+            wr_word(CM_PCMDIV, CM_PASSWD |
+                    (6 << CM_PCMDIV_DIVI_SFT) | (1024 << CM_PCMDIV_DIVF_SFT));
+            wr_word(CM_PCMCTL, CM_PASSWD |
+                    CM_PCMCTL_1MASH | CM_PCMCTL_ENAB_BIT | CM_PCMCTL_SRC_OSC);
+            break;
+        case 96000:
+            // DIVI=3, DIVF=512
+            wr_word(CM_PCMCTL, CM_PASSWD |
+                    CM_PCMCTL_KILL_BIT | CM_PCMCTL_SRC_OSC);
+            wr_word(CM_PCMDIV, CM_PASSWD |
+                    (3 << CM_PCMDIV_DIVI_SFT) | (512 << CM_PCMDIV_DIVF_SFT));
+            wr_word(CM_PCMCTL, CM_PASSWD |
+                    CM_PCMCTL_1MASH | CM_PCMCTL_ENAB_BIT | CM_PCMCTL_SRC_OSC);
+            break;
+        default:
+            break;
+        }
 
-    /*
-     *  I2Sを初期化
-     */
-    switch (bit) {
-    case 16:
-        break;
-    case 24:
-    case 32:
-        wr_word(PCM_MODE_A,
-//                PCM_MODE_CLKM_BIT | // debug
-                PCM_MODE_CLKI_BIT |
-//                PCM_MODE_FSM_BIT | // debug
-                PCM_MODE_FSI_BIT |
-                ((64 - 1) << PCM_MODE_FLEN_SFT) | (32 << PCM_MODE_FSLEN_SFT));
-        wr_word(PCM_RXC_A,
-                PCM_RXC_CH1WEX_BIT | PCM_RXC_CH1EN_BIT |
-                (1 << PCM_RXC_CH1POS_SFT) | (8 << PCM_RXC_CH1WID_SFT) |
-                PCM_RXC_CH2WEX_BIT | PCM_RXC_CH2EN_BIT |
-                (33 << PCM_RXC_CH2POS_SFT) | (8 << PCM_RXC_CH2WID_SFT));
-        wr_word(PCM_TXC_A,
-                PCM_TXC_CH1WEX_BIT | PCM_TXC_CH1EN_BIT |
-                (1 << PCM_TXC_CH1POS_SFT) | (8 << PCM_TXC_CH1WID_SFT) |
-                PCM_TXC_CH2WEX_BIT | PCM_TXC_CH2EN_BIT |
-                (33 << PCM_TXC_CH2POS_SFT) | (8 << PCM_TXC_CH2WID_SFT));
-        wr_word(PCM_CS_A,
-                PCM_CS_SYNC_BIT | PCM_CS_RXERR_BIT | PCM_CS_TXERR_BIT |
-                PCM_CS_RXTHR_SINGLE | PCM_CS_TXTHR_ONE |
-                PCM_CS_RXCLR_BIT | PCM_CS_TXCLR_BIT |
-                PCM_CS_TXON_BIT | PCM_CS_RXON_BIT | PCM_CS_EN_BIT);
-        break;
-    default:
-        break;
+        /*
+        *  I2Sを初期化
+        */
+        switch (bit) {
+        case 16:
+            break;
+        case 24:
+        case 32:
+            wr_word(PCM_MODE_A,
+                    PCM_MODE_CLKI_BIT |
+                    PCM_MODE_FSI_BIT |
+                    ((64 - 1) << PCM_MODE_FLEN_SFT) |
+                    (32 << PCM_MODE_FSLEN_SFT));
+            wr_word(PCM_RXC_A,
+                    PCM_RXC_CH1WEX_BIT | PCM_RXC_CH1EN_BIT |
+                    (1 << PCM_RXC_CH1POS_SFT) | (8 << PCM_RXC_CH1WID_SFT) |
+                    PCM_RXC_CH2WEX_BIT | PCM_RXC_CH2EN_BIT |
+                    (33 << PCM_RXC_CH2POS_SFT) | (8 << PCM_RXC_CH2WID_SFT));
+            wr_word(PCM_TXC_A,
+                    PCM_TXC_CH1WEX_BIT | PCM_TXC_CH1EN_BIT |
+                    (1 << PCM_TXC_CH1POS_SFT) | (8 << PCM_TXC_CH1WID_SFT) |
+                    PCM_TXC_CH2WEX_BIT | PCM_TXC_CH2EN_BIT |
+                    (33 << PCM_TXC_CH2POS_SFT) | (8 << PCM_TXC_CH2WID_SFT));
+            wr_word(PCM_CS_A,
+                    PCM_CS_SYNC_BIT | PCM_CS_RXERR_BIT | PCM_CS_TXERR_BIT |
+                    PCM_CS_RXTHR_SINGLE | PCM_CS_TXTHR_ONE |
+                    PCM_CS_RXCLR_BIT | PCM_CS_TXCLR_BIT |
+                    PCM_CS_TXON_BIT | PCM_CS_RXON_BIT | PCM_CS_EN_BIT);
+            break;
+        default:
+            break;
+        }
+    } else {
+        /*
+        *  I2Sを初期化
+        */
+        switch (bit) {
+        case 16:
+            break;
+        case 24:
+        case 32:
+            wr_word(PCM_MODE_A,
+                    PCM_MODE_CLKM_BIT |
+                    PCM_MODE_CLKI_BIT |
+                    PCM_MODE_FSM_BIT |
+                    PCM_MODE_FSI_BIT |
+                    ((256 - 1) << PCM_MODE_FLEN_SFT) |
+                    (128 << PCM_MODE_FSLEN_SFT));
+            wr_word(PCM_RXC_A,
+                    PCM_RXC_CH1WEX_BIT | PCM_RXC_CH1EN_BIT |
+                    (1 << PCM_RXC_CH1POS_SFT) | (8 << PCM_RXC_CH1WID_SFT) |
+                    PCM_RXC_CH2WEX_BIT | PCM_RXC_CH2EN_BIT |
+                    (129 << PCM_RXC_CH2POS_SFT) | (8 << PCM_RXC_CH2WID_SFT));
+            wr_word(PCM_TXC_A,
+                    PCM_TXC_CH1WEX_BIT | PCM_TXC_CH1EN_BIT |
+                    (1 << PCM_TXC_CH1POS_SFT) | (8 << PCM_TXC_CH1WID_SFT) |
+                    PCM_TXC_CH2WEX_BIT | PCM_TXC_CH2EN_BIT |
+                    (129 << PCM_TXC_CH2POS_SFT) | (8 << PCM_TXC_CH2WID_SFT));
+            wr_word(PCM_CS_A,
+                    PCM_CS_SYNC_BIT | PCM_CS_RXERR_BIT | PCM_CS_TXERR_BIT |
+                    PCM_CS_RXTHR_SINGLE | PCM_CS_TXTHR_ONE |
+                    PCM_CS_RXCLR_BIT | PCM_CS_TXCLR_BIT |
+                    PCM_CS_TXON_BIT | PCM_CS_RXON_BIT | PCM_CS_EN_BIT);
+            break;
+        default:
+            break;
+        }
     }
 }
 
