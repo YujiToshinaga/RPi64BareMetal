@@ -21,7 +21,7 @@
 #define CM_PCMCTL_SRC_GND       (0 << 0)
 #define CM_PCMCTL_SRC_OSC       (1 << 0)
 #define CM_PCMCTL_SRC_PLLA      (4 << 0)
-#define CM_PCMCTL_SRC_PLLB      (5 << 0)
+#define CM_PCMCTL_SRC_PLLC      (5 << 0)
 #define CM_PCMCTL_SRC_PLLD      (6 << 0)
 #define CM_PCMDIV_DIVI_SFT      12
 #define CM_PCMDIV_DIVI_MSK      (0xfff << 12)

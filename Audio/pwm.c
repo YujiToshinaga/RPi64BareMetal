@@ -21,7 +21,7 @@
 #define CM_PWMCTL_SRC_GND       (0 << 0)
 #define CM_PWMCTL_SRC_OSC       (1 << 0)
 #define CM_PWMCTL_SRC_PLLA      (4 << 0)
-#define CM_PWMCTL_SRC_PLLB      (5 << 0)
+#define CM_PWMCTL_SRC_PLLC      (5 << 0)
 #define CM_PWMCTL_SRC_PLLD      (6 << 0)
 #define CM_PWMDIV_DIVI_SFT      12
 #define CM_PWMDIV_DIVI_MSK      (0xfff << 12)
