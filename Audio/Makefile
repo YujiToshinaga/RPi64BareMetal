@@ -31,6 +31,7 @@ SRCS			+= timer.c
 SRCS			+= i2c.c
 SRCS			+= i2s.c
 SRCS			+= wm8731.c
+SRCS			+= pwm.c
 SRCS			+= xmodem.c
 
 LDS_GEN			= $(LDS).gen

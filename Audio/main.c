@@ -9,6 +9,7 @@
 #include "i2c.h"
 #include "i2s.h"
 #include "wm8731.h"
+#include "pwm.h"
 #include "xmodem.h"
 
 uint32_t sin1k_48khz32bit[48] = {
@@ -67,9 +68,9 @@ void memory_init(void)
 
     mmu_mmap_init();
 
-    mm.pa   = MAIN_ADDR;
+    mm.pa   = SDRAM_ADDR;
     mm.va   = mm.pa;
-    mm.size = MAIN_SIZE;
+    mm.size = SDRAM_SIZE;
     mm.attr = MEM_ATTR_NML_C;
     mm.ns   = MEM_NS_NONSECURE;
     mmu_mmap_add(&mm);
@@ -98,36 +99,58 @@ void audio_play(void)
     int count;
 //    int i;
 
+//    uint32_t buf_l[32], buf_r[32];
+
     prints("init 1\n");
     gpio_init();
-    i2c_init(I2C_MSTR1, 0x1a);
-    i2s_init(I2S_SLAV, 48000, 32);
+
+//    prints("init 2\n");
+//    i2c_init(I2C_MSTR1, 0x1a);
+//    i2s_init(I2S_SLAV, 48000, 32);
+//    wm8731_init(WM8731_MSTR, 48000, 32);
+//
+//    prints("init 3\n");
+//    wm8713_active();
+//
+//
+//    // wm8731 Line in -> Line out
+//    count = 0;
+//    for ( ; ; ) {
+//        i2s_read(&l, &r);
+//        if ((count % 48000) == 0) {
+//            printk("%08x %08x\n", l, r);
+//        }
+//
+//        i2s_write(&l, &r);
+//
+////        if (count < 48000 * 10) {
+////            buf[count * 2 + 0] = l;
+////            buf[count * 2 + 1] = r;
+////        } else {
+////            break;
+////        }
+//        count++;
+//    }
+//
+////    for (i = 0; i < 48000 * 10 * 2; i++) {
+////        printk("%08x\n", buf[i]);
+////    }
 
     prints("init 2\n");
-    wm8731_init(WM8731_MSTR, 48000, 32);
+    pwm_init(48000, 32);
 
-    prints("init 3\n");
-    wm8713_active();
-
+    // pwm out
     count = 0;
     for ( ; ; ) {
-        i2s_read(&l, &r);
-        if ((count % 48000) == 0) {
-            printk("%08x %08x\n", l, r);
-        }
+        l = sin1k_48khz32bit[count % 48];
+        r = sin1k_48khz32bit[count % 48];
 
-        i2s_write(&l, &r);
-
-//        if (count < 48000 * 10) {
-//            buf[count * 2 + 0] = l;
-//            buf[count * 2 + 1] = r;
-//        } else {
-//            break;
+//        if ((count % 48000) == 32) {
+//            printk("%08x %08x\n", l, r);
 //        }
+
+        pwm_write(&l, &r);
+
         count++;
     }
-
-//    for (i = 0; i < 48000 * 10 * 2; i++) {
-//        printk("%08x\n", buf[i]);
-//    }
 }

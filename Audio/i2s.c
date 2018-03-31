@@ -135,7 +135,7 @@ void i2s_init(int master_mode, int sr, int bit)
         */
         // oscillator 19.2Mhz
         // PLLC 1000Mhz
-        // PLLC 500Mhz
+        // PLLD 500Mhz
         switch (sr) {
         case 48000:
             // DIVI=6, DIVF=1024
