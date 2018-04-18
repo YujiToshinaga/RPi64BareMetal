@@ -19,20 +19,23 @@ LDS				= baremetal.ld
 ASMS			=
 ASMS			+= startup.S
 ASMS			+= stack.S
+ASMS			+= vector.S
 
 SRCS			=
 SRCS			+= main.c
 SRCS			+= aarch64.c
 SRCS			+= bcm283x.c
+SRCS			+= exception.c
 SRCS			+= printk.c
-SRCS			+= serial.c
+SRCS			+= uart.c
 SRCS			+= gpio.c
 SRCS			+= timer.c
 SRCS			+= i2c.c
 SRCS			+= i2s.c
 SRCS			+= wm8731.c
 SRCS			+= pwm.c
-SRCS			+= xmodem.c
+SRCS			+= audio.c
+#SRCS			+= xmodem.c
 
 LDS_GEN			= $(LDS).gen
 DPNS			= $(ASMS:.S=.d) $(SRCS:.c=.d)

@@ -2,9 +2,11 @@
 #define MACRO_ONLY
 #include "aarch64.h"
 #include "bcm283x.h"
+#include "gpio.h"
+#include "uart.h"
 
 #define DEBUG_CORE0
-//#define DEBUG_JTAG
+#define DEBUG_JTAG
 //#define DEBUG_MU
 //#define DEBUG_STUB
 //#define DEBUG_SECURE
@@ -220,6 +222,12 @@ dbgstub_loop:
 #endif /* DEBUG_STUB */
 
     /*
+     *  FIQとIRQを禁止する
+     */
+    mov   x0, #(DAIF_F_BIT | DAIF_I_BIT)
+    msr   daif, x0
+
+    /*
      *  現在のELによって処理を変える
      */
     mrs   x0, CurrentEL
@@ -304,6 +312,12 @@ drop_el1:
      */
 start_el1:
 
+//    mrs   x0, sctlr_el1
+//    orr   x0, x0, SCTLR_SA_BIT
+//    orr   x0, x0, SCTLR_A_BIT
+//    msr   sctlr_el1, x0
+//    isb
+
     mrs   x0, s3_1_c15_c2_1
     orr   x0, x0, CPUECTLR_SMPEN_BIT
     msr   s3_1_c15_c2_1, x0
@@ -344,6 +358,12 @@ set_bss_end:
 //    cmp   x1, x3
 //    b.lo  set_data_loop
 //set_data_end:
+
+    /*
+     *  例外と割込みを許可する
+     */
+    mov   x0, #0
+    msr   daif, x0
 
     /*
      *  main関数へジャンプする

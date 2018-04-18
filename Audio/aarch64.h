@@ -2,6 +2,12 @@
 #define AARCH64_H
 
 /*
+ *  Vector Table
+ */
+#define VECTOR_ALIGN            11
+#define VECTOR_BALIGN           (0x1 << 11)
+
+/*
  *  CPSRの構成
  */
 #define DAIF_MASK               (0x3c0)

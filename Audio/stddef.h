@@ -1,9 +1,15 @@
 #ifndef STDDEF_H
 #define STDDEF_H
 
+#define NULL    0
+
 #define TRUE    1
 #define FALSE   0
 
+#define true    1
+#define false   0
+
+typedef signed char			bool_t;
 typedef signed char			int8_t;
 typedef unsigned char		uint8_t;
 typedef signed short		int16_t;

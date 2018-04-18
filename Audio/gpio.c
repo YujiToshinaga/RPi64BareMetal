@@ -2,7 +2,7 @@
 #include "bcm283x.h"
 #include "gpio.h"
 
-void gpio_init()
+void gpio_init(void)
 {
     wr_word(GPIO_GPPUD, 0);
 }
@@ -136,4 +136,3 @@ int gpio_get(int id)
 
     return ret;
 }
-

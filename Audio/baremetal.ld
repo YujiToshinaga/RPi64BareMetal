@@ -1,5 +1,6 @@
 #include "baremetal.h"
 #define MACRO_ONLY
+#include "aarch64.h"
 #include "bcm283x.h"
 
 OUTPUT_FORMAT(elf64-littleaarch64)
@@ -20,27 +21,33 @@ SECTIONS
         __STARTUP_END__ = .;
     } > RAM
 
+    .vector : ALIGN(VECTOR_BALIGN) {
+        __VECTOR_START__ = .;
+        vector.o(.vector)
+        __VECTOR_END__ = .;
+    } > RAM
+
     .text . : {
         __TEXT_START__ = .;
-        *(EXCLUDE_FILE (loader.o) .text*)
+        *(.text*)
         __TEXT_END__ = .;
     } > RAM
 
     .rodata . : {
         __RODATA_START__ = .;
-        *(EXCLUDE_FILE (loader.o) .rodata*)
+        *(.rodata*)
         __RODATA_END__ = .;
     } > RAM
 
     .data : ALIGN(16) {
         __DATA_START__ = .;
-        *(EXCLUDE_FILE (loader.o) .data*)
+        *(.data*)
         __DATA_END__ = .;
     } > RAM
 
     .bss : ALIGN(16) {
         __BSS_START__ = .;
-        *(EXCLUDE_FILE (loader.o) .bss*)
+        *(.bss*)
         *(COMMON) /* TODO */
         __BSS_END__ = .;
     } > RAM

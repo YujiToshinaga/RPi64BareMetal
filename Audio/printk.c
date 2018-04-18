@@ -5,6 +5,9 @@
  * Configuration
  *----------------------------------------------------------------------------*/
 
+#include "stddef.h"
+#include "uart.h"
+
 typedef signed int			int_t;
 typedef unsigned int		uint_t;
 
@@ -29,16 +32,13 @@ typedef unsigned long long	uint64_t;
 #define IMP_MULT
 #define IMP_DIV
 
-//#include <stdio.h>
-#include "serial.h"
-
 static inline void _putchar(char c)
 {
 	if (c == '\n') {
-		serial_put('\n');
-		serial_put('\r');
+		uart_pol_put('\n');
+		uart_pol_put('\r');
 	} else {
-		serial_put(c);
+		uart_pol_put(c);
 	}
 }
 

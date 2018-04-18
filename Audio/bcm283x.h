@@ -28,6 +28,7 @@
 #define IRQNO_ARMMBOX           33
 #define IRQNO_PENDING1          40
 #define IRQNO_PENDING2          41
+#define IRQNO_I2SPCM            49
 #define IRQNO_AUX               93
 #define IRQNO_I2CSPISLV         107
 #define IRQNO_PWA0              109
@@ -53,66 +54,6 @@
 #define DISABLE_IRQ_1           0x3f00b21C
 #define DISABLE_IRQ_2           0x3f00b220
 #define DISABLE_IRQ_B           0x3f00b224
-
-#define GPIO_GPFSEL0            0x3f200000
-#define GPIO_GPFSEL1            0x3f200004
-#define GPIO_GPFSEL2            0x3f200008
-#define GPIO_GPFSEL3            0x3f20000C
-#define GPIO_GPFSEL4            0x3f200010
-#define GPIO_GPFSEL5            0x3f200014
-#define GPIO_GPSET0             0x3f20001C
-#define GPIO_GPSET1             0x3f200020
-#define GPIO_GPCLR0             0x3f200028
-#define GPIO_GPCLR1             0x3f20002C
-#define GPIO_GPLEV0             0x3f200034
-#define GPIO_GPLEV1             0x3f200038
-#define GPIO_GPEDS0             0x3f200040
-#define GPIO_GPEDS1             0x3f200044
-#define GPIO_GPREN0             0x3f20004C
-#define GPIO_GPREN1             0x3f200050
-#define GPIO_GPFEN0             0x3f200058
-#define GPIO_GPFEN1             0x3f20005C
-#define GPIO_GPHEN0             0x3f200064
-#define GPIO_GPHEN1             0x3f200068
-#define GPIO_GPLEN0             0x3f200070
-#define GPIO_GPLEN1             0x3f200074
-#define GPIO_GPAREN0            0x3f20007C
-#define GPIO_GPAREN1            0x3f200080
-#define GPIO_GPAFEN0            0x3f200088
-#define GPIO_GPAFEN1            0x3f20008C
-#define GPIO_GPPUD              0x3f200094
-#define GPIO_GPPUDCLK0          0x3f200098
-#define GPIO_GPPUDCLK1          0x3f20009C
-
-#define AUX_IRQ                 0x3f215000 
-#define AUX_ENABLES             0x3f215004 
-#define MU_IO                   0x3f215040 
-#define MU_IER                  0x3f215044 
-#define MU_IIR                  0x3f215048 
-#define MU_LCR                  0x3f21504c 
-#define MU_MCR                  0x3f215050 
-#define MU_LSR                  0x3f215054 
-#define MU_MSR                  0x3f215058 
-#define MU_SCRATCH              0x3f21505c 
-#define MU_CNTL                 0x3f215060 
-#define MU_STAT                 0x3f215064 
-#define MU_BAUD                 0x3f215068 
-
-#define AUX_ENABLES_MU_EN_BIT   (0x1 << 0)
-#define AUX_ENABLES_SPI1_EN_BIT (0x1 << 1)
-#define AUX_ENABLES_SPI2_EN_BIT (0x1 << 2)
-#define MU_IO_DATA_SHIFT        0
-#define MU_IO_DATA_MASK         (0xff << 0)
-#define MU_IER_EN_TX_INT_BIT    (0x1 << 1)
-#define MU_IER_EN_RX_INT_BIT    (0x1 << 0)
-#define MU_IIR_FIFO_CLR         (0x3 << 1)
-#define MU_LCR_DS_8BIT          (0x3 << 0)
-#define MU_LSR_TX_IDLE_BIT      (0x1 << 6)
-#define MU_LSR_TX_EMPTY_BIT     (0x1 << 5)
-#define MU_LSR_RX_OVR_BIT       (0x1 << 1)
-#define MU_LSR_DATA_RDY_BIT     (0x1 << 0)
-#define MU_CNTL_TX_EN_BIT       (0x1 << 1)
-#define MU_CNTL_RX_EN_BIT       (0x1 << 0)
 
 #define CTRL_REG                0x40000000
 #define CORE_TIMER_PRE          0x40000008

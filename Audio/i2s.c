@@ -2,6 +2,7 @@
 #include "bcm283x.h"
 #include "gpio.h"
 #include "i2s.h"
+#include "exception.h"
 
 /*
  *  Clock Manager
@@ -119,20 +120,33 @@
 #define PCM_TXC_CH2WID_SFT      0
 #define PCM_TXC_CH2WID_MSK      (0xf << 0)
 
+#define PCM_INTEN_RXERR_BIT     (0x1 << 3)
+#define PCM_INTEN_TXERR_BIT     (0x1 << 2)
+#define PCM_INTEN_RXR_BIT       (0x1 << 1)
+#define PCM_INTEN_TXW_BIT       (0x1 << 0)
+
+#define PCM_INTSTC_RXERR_BIT    (0x1 << 3)
+#define PCM_INTSTC_TXERR_BIT    (0x1 << 2)
+#define PCM_INTSTC_RXR_BIT      (0x1 << 1)
+#define PCM_INTSTC_TXW_BIT      (0x1 << 0)
+
+void (*i2s_rcv_cb)(void);
+void (*i2s_snd_cb)(void);
+
 void i2s_init(int master_mode, int sr, int bit)
 {
-    /*
-     *  GPIOをI2Sに切り替え
-     */
     gpio_fsel(18, GPIO_FSEL_0);
     gpio_fsel(19, GPIO_FSEL_0);
     gpio_fsel(20, GPIO_FSEL_0);
     gpio_fsel(21, GPIO_FSEL_0);
 
+    /*
+     *  Raspberry PiをMaster / Slaveにする
+     */
     if (master_mode == I2S_MSTR) {
         /*
-        *  Clock Manager Audio Clocks Control
-        */
+         *  Clock Manager Audio Clocks Control
+         */
         // oscillator 19.2Mhz
         // PLLC 1000Mhz
         // PLLD 500Mhz
@@ -160,8 +174,8 @@ void i2s_init(int master_mode, int sr, int bit)
         }
 
         /*
-        *  I2Sを初期化
-        */
+         *  I2Sを初期化する
+         */
         switch (bit) {
         case 16:
             break;
@@ -184,7 +198,7 @@ void i2s_init(int master_mode, int sr, int bit)
                     (33 << PCM_TXC_CH2POS_SFT) | (8 << PCM_TXC_CH2WID_SFT));
             wr_word(PCM_CS_A,
                     PCM_CS_SYNC_BIT | PCM_CS_RXERR_BIT | PCM_CS_TXERR_BIT |
-                    PCM_CS_RXTHR_SINGLE | PCM_CS_TXTHR_ONE |
+                    PCM_CS_RXTHR_LSTFL | PCM_CS_TXTHR_LSSFL |
                     PCM_CS_RXCLR_BIT | PCM_CS_TXCLR_BIT |
                     PCM_CS_TXON_BIT | PCM_CS_RXON_BIT | PCM_CS_EN_BIT);
             break;
@@ -193,8 +207,8 @@ void i2s_init(int master_mode, int sr, int bit)
         }
     } else {
         /*
-        *  I2Sを初期化
-        */
+         *  I2Sを初期化する
+         */
         switch (bit) {
         case 16:
             break;
@@ -219,7 +233,7 @@ void i2s_init(int master_mode, int sr, int bit)
                     (129 << PCM_TXC_CH2POS_SFT) | (8 << PCM_TXC_CH2WID_SFT));
             wr_word(PCM_CS_A,
                     PCM_CS_SYNC_BIT | PCM_CS_RXERR_BIT | PCM_CS_TXERR_BIT |
-                    PCM_CS_RXTHR_SINGLE | PCM_CS_TXTHR_ONE |
+                    PCM_CS_RXTHR_LSTFL | PCM_CS_TXTHR_LSSFL |
                     PCM_CS_RXCLR_BIT | PCM_CS_TXCLR_BIT |
                     PCM_CS_TXON_BIT | PCM_CS_RXON_BIT | PCM_CS_EN_BIT);
             break;
@@ -227,9 +241,40 @@ void i2s_init(int master_mode, int sr, int bit)
             break;
         }
     }
+
+    /*
+     *  割込みを有効にする
+     */
+    exception_int_ena(IRQNO_PCM, i2s_isr);
 }
 
-void i2s_read(uint32_t* val_l, uint32_t* val_r)
+bool_t i2s_rcv_isrdy(void)
+{
+    bool_t ready;
+
+    if ((rd_word(PCM_CS_A) & PCM_CS_RXD_BIT)
+            == PCM_CS_RXD_BIT) {
+        ready = true;
+    } else {
+        ready = false;
+    }
+    return ready;
+}
+
+bool_t i2s_snd_isrdy(void)
+{
+    bool_t ready;
+
+    if ((rd_word(PCM_CS_A) & PCM_CS_TXD_BIT)
+            == PCM_CS_TXD_BIT) {
+        ready = true;
+    } else {
+        ready = false;
+    }
+    return ready;
+}
+
+void i2s_rcv_data(uint32_t *val_l, uint32_t *val_r)
 {
     while ((rd_word(PCM_CS_A) & PCM_CS_RXD_BIT) == 0x0);
     *val_l = rd_word(PCM_FIFO_A);
@@ -237,7 +282,7 @@ void i2s_read(uint32_t* val_l, uint32_t* val_r)
     *val_r = rd_word(PCM_FIFO_A);
 }
 
-void i2s_write(uint32_t* val_l, uint32_t* val_r)
+void i2s_snd_data(uint32_t *val_l, uint32_t *val_r)
 {
     while ((rd_word(PCM_CS_A) & PCM_CS_TXD_BIT) == 0x0);
     wr_word(PCM_FIFO_A, *val_l);
@@ -245,3 +290,84 @@ void i2s_write(uint32_t* val_l, uint32_t* val_r)
     wr_word(PCM_FIFO_A, *val_r);
 }
 
+void i2s_rcv_int_ena(void (*callback)(void))
+{
+    uint32_t tmp;
+
+    i2s_rcv_cb = callback;
+
+//    tmp = rd_word(PCM_CS_A);
+//    tmp |= PCM_CS_SYNC_BIT | PCM_CS_RXERR_BIT;
+//    tmp |= PCM_CS_RXTHR_LSTFL;
+//    tmp |= PCM_CS_RXCLR_BIT;
+//    wr_word(PCM_CS_A, tmp);
+
+    tmp = rd_word(PCM_INTEN_A);
+    tmp |= PCM_INTEN_RXR_BIT;
+    wr_word(PCM_INTEN_A, tmp);
+//
+//    tmp = rd_word(PCM_INTSTC_A);
+//    tmp |= PCM_INTEN_RXR_BIT;
+//    wr_word(PCM_INTSTC_A, tmp);
+}
+
+void i2s_rcv_int_dis(void)
+{
+    uint32_t tmp;
+
+    tmp = rd_word(PCM_INTEN_A);
+    tmp &= ~PCM_INTEN_RXR_BIT;
+    wr_word(PCM_INTEN_A, tmp);
+//
+//    tmp = rd_word(PCM_INTSTC_A);
+//    tmp |= PCM_INTSTC_RXR_BIT;
+//    wr_word(PCM_INTSTC_A, tmp);
+}
+
+void i2s_snd_int_ena(void (*callback)(void))
+{
+    uint32_t tmp;
+
+    i2s_snd_cb = callback;
+
+//    tmp = rd_word(PCM_CS_A);
+//    tmp |= PCM_CS_SYNC_BIT | PCM_CS_TXERR_BIT;
+//    tmp |= PCM_CS_TXTHR_LSSFL;
+//    tmp |= PCM_CS_TXCLR_BIT;
+//    wr_word(PCM_CS_A, tmp);
+
+    tmp = rd_word(PCM_INTEN_A);
+    tmp |= PCM_INTEN_TXW_BIT;
+    wr_word(PCM_INTEN_A, tmp);
+//
+//    tmp = rd_word(PCM_INTSTC_A);
+//    tmp |= PCM_INTEN_TXW_BIT;
+//    wr_word(PCM_INTSTC_A, tmp);
+}
+
+void i2s_snd_int_dis(void)
+{
+    uint32_t tmp;
+
+    tmp = rd_word(PCM_INTEN_A);
+    tmp &= ~PCM_INTEN_TXW_BIT;
+    wr_word(PCM_INTEN_A, tmp);
+//
+//    tmp = rd_word(PCM_INTSTC_A);
+//    tmp |= PCM_INTSTC_TXW_BIT;
+//    wr_word(PCM_INTSTC_A, tmp);
+}
+
+void i2s_isr(void)
+{
+    if ((rd_word(PCM_INTSTC_A) & PCM_INTSTC_RXR_BIT)
+            == PCM_INTSTC_RXR_BIT) {
+        i2s_rcv_cb();
+        wr_word(PCM_INTSTC_A, rd_word(PCM_INTSTC_A) | PCM_INTSTC_RXR_BIT);
+    }
+    if ((rd_word(PCM_INTSTC_A) & PCM_INTSTC_TXW_BIT)
+            == PCM_INTSTC_TXW_BIT) {
+        i2s_snd_cb();
+        wr_word(PCM_INTSTC_A, rd_word(PCM_INTSTC_A) | PCM_INTSTC_TXW_BIT);
+    }
+}

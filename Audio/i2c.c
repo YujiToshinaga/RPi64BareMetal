@@ -44,6 +44,9 @@ void i2c_init(int master_id, uint8_t slave_addr)
     int scl_gpio_id = 0;
     int scl_gpio_fsel = 0;
 
+    /*
+     *  I2CのMaster IDによってアクセスする対象を決める
+     */
     switch (master_id) {
     case I2C_MSTR0:
         base = I2C_MSTR0_BASE;
@@ -65,13 +68,13 @@ void i2c_init(int master_id, uint8_t slave_addr)
     }
 
     /*
-     *  GPIOをI2Cに切り替え
+     *  GPIOをI2Cに切り替える
      */
     gpio_fsel(sda_gpio_id, sda_gpio_fsel);
     gpio_fsel(scl_gpio_id, scl_gpio_fsel);
 
     /*
-     *  I2Cを初期化
+     *  I2Cを初期化する
      */
     // I2Cを有効にして，FIFOをクリアする
     wr_word(base + I2C_C, I2C_C_I2CEN_BIT | I2C_C_CLEAR_CLEAR);

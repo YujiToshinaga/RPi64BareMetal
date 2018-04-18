@@ -2,14 +2,16 @@
 #include "baremetal.h"
 #include "aarch64.h"
 #include "bcm283x.h"
-#include "printk.h"
-#include "serial.h"
+#include "exception.h"
 #include "gpio.h"
+#include "uart.h"
+#include "printk.h"
 #include "timer.h"
 #include "i2c.h"
 #include "i2s.h"
 #include "wm8731.h"
 #include "pwm.h"
+#include "audio.h"
 #include "xmodem.h"
 
 uint32_t sin1k_48khz32bit[48] = {
@@ -27,17 +29,14 @@ uint32_t sin1k_48khz32bit[48] = {
     0Xf999999a, 0Xfb1a05df, 0Xfcafe6d9, 0Xfe544ab2,
 };
 
-void memory_init(void);
+void main_init(void);
 void audio_play(void);
 
 int main(void)
 {
-    // シリアルを有効化する
-    serial_init();
+    main_init();
 
     prints("hello world\n");
-
-    memory_init();
 
     audio_play();
 
@@ -48,23 +47,22 @@ int main(void)
     return 0;
 }
 
-void memory_init(void)
+void main_init(void)
 {
     mmap_t mm;
-    uint64_t tmp64;
+
+    // 例外を初期化する
+    exception_init();
+
+    // IOを初期化する
+    gpio_init();
+    uart_init(UART_BAUDRATE);
+    i2c_init(I2C_MSTR1, 0x1a);
+    i2s_init(I2S_SLAV, 48000, 32);
+    wm8731_init(WM8731_MSTR, 48000, 32);
 
     // キャッシュ、MMUを有効化する
     cache_disable();
-
-    SCTLR_EL1_READ(tmp64);
-    tmp64 |= (SCTLR_SA_BIT | SCTLR_A_BIT);
-    SCTLR_EL1_WRITE(tmp64);
-    ISB();
-
-    CPUECTLR_EL1_READ(tmp64);
-    tmp64 |= CPUECTLR_SMPEN_BIT;
-    CPUECTLR_EL1_WRITE(tmp64);
-    ISB();
 
     mmu_mmap_init();
 
@@ -95,14 +93,14 @@ void memory_init(void)
 
 void audio_play(void)
 {
-    uint32_t l, r;
-    int count;
+//    uint32_t l, r;
+//    int count;
 //    int i;
 
 //    uint32_t buf_l[32], buf_r[32];
 
-    prints("init 1\n");
-    gpio_init();
+//    prints("init 1\n");
+//    gpio_init();
 
 //    prints("init 2\n");
 //    i2c_init(I2C_MSTR1, 0x1a);
@@ -136,21 +134,57 @@ void audio_play(void)
 ////        printk("%08x\n", buf[i]);
 ////    }
 
-    prints("init 2\n");
-    pwm_init(48000, 32);
+//    prints("init 2\n");
+//    gpio_init();
+//    pwm_init(48000, 32);
+//
+//    // pwm out
+//    count = 0;
+//    for ( ; ; ) {
+//        l = sin1k_48khz32bit[count % 48];
+//        r = sin1k_48khz32bit[count % 48];
+//
+////        if ((count % 48000) == 32) {
+////            printk("%08x %08x\n", l, r);
+////        }
+//
+//        pwm_write(&l, &r);
+//
+//        count++;
+//    }
 
-    // pwm out
+
+
+    uint32_t inbuf_l[BUFFERING_SIZE], inbuf_r[BUFFERING_SIZE];
+    uint32_t outbuf_l[BUFFERING_SIZE], outbuf_r[BUFFERING_SIZE];
+    bool_t read = false;
+    int i;
+    int count = 0;
+
+	prints("init 1\n");
+
+    audio_open();
+
+	prints("init 2\n");
+
     count = 0;
     for ( ; ; ) {
-        l = sin1k_48khz32bit[count % 48];
-        r = sin1k_48khz32bit[count % 48];
+        read = audio_read_data(inbuf_l, inbuf_r);
+        if (read == true) {
+            for (i = 0; i < BUFFERING_SIZE; i++) {
+                outbuf_l[i] = inbuf_l[i];
+                outbuf_r[i] = inbuf_r[i];
+            }
+            audio_write_data(outbuf_l, outbuf_r);
 
-//        if ((count % 48000) == 32) {
-//            printk("%08x %08x\n", l, r);
-//        }
-
-        pwm_write(&l, &r);
-
-        count++;
+            count = count + BUFFERING_SIZE;
+            if ((count % 48000) == 0) {
+                printk("%08x\n", inbuf_l[0]);
+            }
+        }
     }
+
+    audio_close();
+
+	for ( ; ; );
 }
