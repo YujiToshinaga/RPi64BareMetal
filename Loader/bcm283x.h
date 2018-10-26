@@ -103,8 +103,8 @@
 #define AUX_ENABLES_SPI2_EN_BIT (0x1 << 2)
 #define MU_IO_DATA_SHIFT        0
 #define MU_IO_DATA_MASK         (0xff << 0)
-#define MU_IER_EN_TX_INT_BIT    (0x1 << 1)
-#define MU_IER_EN_RX_INT_BIT    (0x1 << 0)
+#define MU_IER_EN_RX_INT_BIT    (0x1 << 1)
+#define MU_IER_EN_TX_INT_BIT    (0x1 << 0)
 #define MU_IIR_FIFO_CLR         (0x3 << 1)
 #define MU_LCR_DS_8BIT          (0x3 << 0)
 #define MU_LSR_TX_IDLE_BIT      (0x1 << 6)
